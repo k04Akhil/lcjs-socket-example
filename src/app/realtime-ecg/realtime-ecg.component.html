@@ -1,0 +1,71 @@
+<div class="w-100">
+  <div
+    class="dz-card card-header"
+    style="background: #1f2142; border-bottom: none"
+  >
+    <div class="pointer" (click)="onClickBack()">
+      <img src="../../assets/left-arrow.png" alt="left-arrow" />
+    </div>
+    <div class="mx-auto">
+      <h5 style="color: white">Dozee ECG view</h5>
+    </div>
+  </div>
+  <div style="background-color: #353755">
+    <div style="background: #353755; color: white">
+      <div
+        style="
+          display: grid;
+          grid-template-columns: 10% 40%;
+          justify-content: center;
+          gap: 30px;
+        "
+      >
+        <div class="mt-3" style="justify-self: end">
+          <img src="../../assets/avatar-plain.png" alt="avatar-plain" />
+        </div>
+
+        <div
+          class="mt-2"
+          style="font-weight: 500; font-size: 18px; line-height: 27px"
+        >
+          <div class="row">
+            <div class="col-4">Patient Name</div>
+            <div class="col-1">:</div>
+            <div class="col-6">Natesh Iyer</div>
+          </div>
+          <div class="row">
+            <div class="col-4">Patient ID</div>
+            <div class="col-1">:</div>
+            <div class="col-6">VIC-123-1B</div>
+          </div>
+          <div class="row">
+            <div class="col-4">Age/Gender</div>
+            <div class="col-1">:</div>
+            <div class="col-6">76 / Male</div>
+          </div>
+          <div class="row">
+            <div class="col-4">Start Date/Time</div>
+            <div class="col-1">:</div>
+            <div class="col-6">03 Feb 22 / 04:04 PM</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-5" style="background: #1f2142; border-radius: 9px">
+        <div class="text-center p-4" style="color: #68cc76">
+          <span
+            class="dot"
+            [ngClass]="{ blink_me: isDataAvailable === true }"
+          ></span>
+          Recording
+        </div>
+
+        <div class="p-4">
+          <ngx-chart [points]="$updatePoint.asObservable()"></ngx-chart>
+        </div>
+
+        <div class="p-3"></div>
+      </div>
+    </div>
+  </div>
+</div>
