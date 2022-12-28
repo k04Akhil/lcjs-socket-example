@@ -48,6 +48,9 @@ export class ChartComponent
   xStep = 1000 / this.dataPointsPerSecond;
   private eventsSubscription: Subscription = new Subscription();
   pointCache: Point[] = [];
+  // Limit data input to only happen as fast as monitor is capable of refreshing. This should get rid of extra data processing that wouldn't be visible in any case.
+  bufferedIncomingPoints: Point[] = [];
+  forwardBufferedIncomingPointsHandle: number | undefined;
   @Input() points: Observable<Point[]> = new Observable<Point[]>();
   chartConfig: any;
 
@@ -62,11 +65,17 @@ export class ChartComponent
   ngOnChanges(changes: SimpleChanges) {}
 
   ngAfterViewInit() {
-    // this.appendDataPoints(this.points);
     this.chartXY = lightningChart().ChartXY({ container: `${this.chartId}` });
     this.chartConfig = this.createChartConfig();
-    this.eventsSubscription = this.points.subscribe((point: Point[]) => {
-      this.appendDataPoints(point);
+    this.eventsSubscription = this.points.subscribe((points: Point[]) => {
+      // Place new incoming points into buffer array.
+      for (const point of points) {
+        this.bufferedIncomingPoints.push(point);
+      }
+      // Schedule method call that takes buffered points forward (unless already scheduled)
+      this.forwardBufferedIncomingPointsHandle =
+        this.forwardBufferedIncomingPointsHandle ||
+        requestAnimationFrame(this.forwardBufferedIncomingPoints);
     });
   }
 
@@ -151,11 +160,11 @@ export class ChartComponent
     };
   }
 
-  appendDataPoints(dataPointsAllChannels: Point[]) {
+  forwardBufferedIncomingPoints() {
     // Keep track of the latest X (time position), clamped to the sweeping axis range.
     let posX = 0;
 
-    const newDataPointsTimestamped = dataPointsAllChannels;
+    const newDataPointsTimestamped = this.bufferedIncomingPoints;
     const newDataCache = this.pointCache;
 
     // NOTE: Incoming data points are timestamped, meaning their X coordinates can go outside sweeping axis interval.
@@ -218,7 +227,6 @@ export class ChartComponent
         ? newDataCache[newDataCache.length - 1]
         : newDataPointsSweeping[newDataPointsSweeping.length - 1],
     ];
-    
     this.chartConfig.seriesHighlightLastPoints.clear().add(highlightPoints);
 
     // Move overlays of old data to right locations.
@@ -232,11 +240,15 @@ export class ChartComponent
     });
 
     this.prevPosX = posX;
+    this.forwardBufferedIncomingPointsHandle = undefined;
+    this.bufferedIncomingPoints.length = 0
   }
 
   ngOnDestroy() {
     // "dispose" should be called when the component is unmounted to free all the resources used by the chart
     this.chartXY.dispose();
     this.eventsSubscription.unsubscribe();
+    if (this.forwardBufferedIncomingPointsHandle !== undefined)
+      cancelAnimationFrame(this.forwardBufferedIncomingPointsHandle);
   }
 }
