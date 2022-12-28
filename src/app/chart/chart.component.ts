@@ -67,6 +67,7 @@ export class ChartComponent
   ngAfterViewInit() {
     this.chartXY = lightningChart().ChartXY({ container: `${this.chartId}` });
     this.chartConfig = this.createChartConfig();
+    this.forwardBufferedIncomingPoints = this.forwardBufferedIncomingPoints.bind(this)
     this.eventsSubscription = this.points.subscribe((points: Point[]) => {
       // Place new incoming points into buffer array.
       for (const point of points) {
