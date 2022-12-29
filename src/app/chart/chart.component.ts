@@ -108,6 +108,7 @@ export class ChartComponent
       .setTickStrategy(AxisTickStrategies.Numeric);
 
     // Series for displaying "old" data.
+    // NOTE: For correct draw order with LCJS v3.4 : this has to be created first, receive at least one data point and be rendered once before other series are displayed.
     const seriesRight = chart
       .addLineSeries({
         dataPattern: { pattern: "ProgressiveX" },
@@ -119,7 +120,6 @@ export class ChartComponent
           fillStyle: new SolidFill({ color: info.color }),
         })
       );
-
     seriesRight.add({ x: 0, y: 0 });
 
     // Rectangle for hiding "old" data under incoming "new" data.
@@ -128,7 +128,9 @@ export class ChartComponent
       .add({ x1: 0, y1: 0, x2: 0, y2: 0 })
       .setFillStyle(new SolidFill({ color: info.backgroundColor }))
       .setStrokeStyle(emptyLine)
-      .setMouseInteractions(false);
+      .setMouseInteractions(false)
+      // NOTE: Draw order hack only required for LCJS v3.4
+      .dispose();
 
     // Series for displaying new data.
     const seriesLeft = chart
@@ -141,12 +143,20 @@ export class ChartComponent
           thickness: 2,
           fillStyle: new SolidFill({ color: info.color }),
         })
-      );
+      )
+      // NOTE: Draw order hack only required for LCJS v3.4
+      .dispose();
 
     const seriesHighlightLastPoints = chart
       .addPointSeries({ pointShape: PointShape.Circle })
       .setPointFillStyle(new SolidFill({ color: ColorHEX("#ffffff") }))
       .setPointSize(5);
+
+    // NOTE: Draw order hack only required for LCJS v3.4
+    requestAnimationFrame(() => {
+      seriesOverlayRight.restore();
+      seriesLeft.restore();
+    });
 
     this.chartXY = chart;
 
@@ -242,7 +252,7 @@ export class ChartComponent
 
     this.prevPosX = posX;
     this.forwardBufferedIncomingPointsHandle = undefined;
-    this.bufferedIncomingPoints.length = 0
+    this.bufferedIncomingPoints.length = 0;
   }
 
   ngOnDestroy() {
