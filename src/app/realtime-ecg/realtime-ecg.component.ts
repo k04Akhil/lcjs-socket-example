@@ -4,8 +4,6 @@ import { Point } from "@arction/lcjs";
 import { Subject, Subscription } from "rxjs";
 import { SocketService } from "../services/socket.service";
 
-const BUFFER_TIME = 16;
-
 @Component({
   selector: "realtime-ecg",
   templateUrl: "./realtime-ecg.component.html",
@@ -34,12 +32,7 @@ export class RealtimeEcgComponent implements OnInit {
     this.$allSubs = this.socketService
       .ecgSubscription()
       .subscribe((res: any) => {
-        this.ecgData.push(res);
-
-        if (this.ecgData.length > BUFFER_TIME) {
-          this.$updatePoint.next(this.ecgData);
-          this.ecgData = [];
-        }
+          this.$updatePoint.next(res);
       });
   }
 

@@ -5,7 +5,7 @@ import {
   OnChanges,
   OnDestroy,
   OnInit,
-  SimpleChanges
+  SimpleChanges,
 } from "@angular/core";
 import {
   AutoCursorModes,
@@ -19,7 +19,7 @@ import {
   Point,
   PointShape,
   SolidFill,
-  SolidLine
+  SolidLine,
 } from "@arction/lcjs";
 import { Observable, Subscription } from "rxjs";
 
@@ -50,6 +50,7 @@ export class ChartComponent
   pointCache: Point[] = [];
   // Limit data input to only happen as fast as monitor is capable of refreshing. This should get rid of extra data processing that wouldn't be visible in any case.
   bufferedIncomingPoints: Point[] = [];
+  cache:any = []
   forwardBufferedIncomingPointsHandle: number | undefined;
   @Input() points: Observable<Point[]> = new Observable<Point[]>();
   chartConfig: any;
@@ -67,16 +68,20 @@ export class ChartComponent
   ngAfterViewInit() {
     this.chartXY = lightningChart().ChartXY({ container: `${this.chartId}` });
     this.chartConfig = this.createChartConfig();
-    this.forwardBufferedIncomingPoints = this.forwardBufferedIncomingPoints.bind(this)
+    this.forwardBufferedIncomingPoints =
+      this.forwardBufferedIncomingPoints.bind(this);
     this.eventsSubscription = this.points.subscribe((points: Point[]) => {
       // Place new incoming points into buffer array.
       for (const point of points) {
+        this.cache.push(point);
         this.bufferedIncomingPoints.push(point);
       }
       // Schedule method call that takes buffered points forward (unless already scheduled)
       this.forwardBufferedIncomingPointsHandle =
         this.forwardBufferedIncomingPointsHandle ||
         requestAnimationFrame(this.forwardBufferedIncomingPoints);
+        console.log(this.cache);
+        
     });
   }
 
@@ -105,7 +110,7 @@ export class ChartComponent
       .getDefaultAxisY()
       .setStrokeStyle(emptyLine)
       .setInterval(info.yMin, info.yMax, false, true)
-      .setTickStrategy(AxisTickStrategies.Numeric);
+      .setTickStrategy(AxisTickStrategies.Empty);
 
     // Series for displaying "old" data.
     // NOTE: For correct draw order with LCJS v3.4 : this has to be created first, receive at least one data point and be rendered once before other series are displayed.

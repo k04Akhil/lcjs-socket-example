@@ -14,9 +14,17 @@ export class SocketService {
 
   connectSocket() {
     this.socket = new WebSocket(environment.SOCKET_ENDPOINT, AppSettings.token);
+    this.socketmessage();
+  }
+
+  socketmessage() {
+    this.socket.onmessage = (event: any) => {
+      this.ecgData = this.ecgData.concat(JSON.parse(event.data));
+    };
   }
 
   disconnectSocket() {
+    this.ecgData = [];
     this.socket.close();
   }
 
@@ -33,18 +41,18 @@ export class SocketService {
       );
     };
     return new Observable((observer) => {
-      this.socket.onmessage = (event: any) => {
-        const ecgData = this.ecgData.concat(JSON.parse(event.data));
+      let tempArray: any = [];
 
-        let tempArray = [];
-        ecgData.map((ecg, i) => {
+      setInterval(() => {
+        const first20Data = this.ecgData.splice(0, 20);
+        first20Data.map((ecg, i) => {
           const data = {
             x: ecg["Timestamp"],
             y: this.calcRealMv(ecg["Value"]),
           };
-          observer.next(data);
+          observer.next([data]);
         });
-      };
+      }, 20);
     });
   }
 
