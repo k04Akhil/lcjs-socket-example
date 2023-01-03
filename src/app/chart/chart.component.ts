@@ -2,10 +2,8 @@ import {
   AfterViewInit,
   Component,
   Input,
-  OnChanges,
   OnDestroy,
   OnInit,
-  SimpleChanges,
 } from "@angular/core";
 import {
   AutoCursorModes,
@@ -20,6 +18,7 @@ import {
   PointShape,
   SolidFill,
   SolidLine,
+  translatePoint,
 } from "@arction/lcjs";
 import { Observable, Subscription } from "rxjs";
 
@@ -36,34 +35,24 @@ const info = {
   templateUrl: "./chart.component.html",
   styleUrls: ["./chart.component.scss"],
 })
-export class ChartComponent
-  implements OnChanges, OnDestroy, AfterViewInit, OnInit
-{
+export class ChartComponent implements OnDestroy, AfterViewInit, OnInit {
   chartXY: ChartXY | any;
   chartId: number | any;
   prevPosX: number = 0;
-  tStart = 0;
-  pushedDataCount = 0;
-  dataPointsPerSecond = 1000; // 100 Hz
-  xStep = 1000 / this.dataPointsPerSecond;
   private eventsSubscription: Subscription = new Subscription();
   pointCache: Point[] = [];
   // Limit data input to only happen as fast as monitor is capable of refreshing. This should get rid of extra data processing that wouldn't be visible in any case.
   bufferedIncomingPoints: Point[] = [];
-  cache:any = []
   forwardBufferedIncomingPointsHandle: number | undefined;
   @Input() points: Observable<Point[]> = new Observable<Point[]>();
   chartConfig: any;
 
-  constructor() {
-    this.tStart = window.performance.now();
-  }
+  constructor() {}
 
   ngOnInit() {
     // Generate random ID to us as the containerId for the chart and the target div id
     this.chartId = Math.trunc(Math.random() * 1000000);
   }
-  ngOnChanges(changes: SimpleChanges) {}
 
   ngAfterViewInit() {
     this.chartXY = lightningChart().ChartXY({ container: `${this.chartId}` });
@@ -73,16 +62,39 @@ export class ChartComponent
     this.eventsSubscription = this.points.subscribe((points: Point[]) => {
       // Place new incoming points into buffer array.
       for (const point of points) {
-        this.cache.push(point);
         this.bufferedIncomingPoints.push(point);
       }
       // Schedule method call that takes buffered points forward (unless already scheduled)
       this.forwardBufferedIncomingPointsHandle =
         this.forwardBufferedIncomingPointsHandle ||
         requestAnimationFrame(this.forwardBufferedIncomingPoints);
-        console.log(this.cache);
-        
     });
+
+    this.chartCoordinates();
+  }
+
+  chartCoordinates() {
+    const axisX = this.chartXY.getDefaultAxisX();
+    const axisY = this.chartXY.getDefaultAxisY();
+    const bottomLeftEngine = translatePoint(
+      { x: axisX.getInterval().start, y: axisY.getInterval().start },
+      { x: axisX, y: axisY },
+      this.chartXY.engine.scale
+    );
+    const bottomLeftClient = this.chartXY.engine.engineLocation2Client(
+      bottomLeftEngine.x,
+      bottomLeftEngine.y
+    );
+    const topRightEngine = translatePoint(
+      { x: axisX.getInterval().end, y: axisY.getInterval().end },
+      { x: axisX, y: axisY },
+      this.chartXY.engine.scale
+    );
+    const topRightClient = this.chartXY.engine.engineLocation2Client(
+      topRightEngine.x,
+      topRightEngine.y
+    );
+    console.log({ bottomLeftClient, topRightClient });
   }
 
   createChartConfig() {
@@ -101,7 +113,7 @@ export class ChartComponent
 
     const axisX = chart
       .getDefaultAxisX()
-      .setTickStrategy(AxisTickStrategies.Numeric)
+      .setTickStrategy(AxisTickStrategies.Empty)
       .setStrokeStyle(emptyLine)
       .setScrollStrategy(undefined)
       .setInterval(0, X_VIEW_MS);
