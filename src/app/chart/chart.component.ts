@@ -109,7 +109,13 @@ export class ChartComponent implements OnDestroy, AfterViewInit, OnInit {
       .setBackgroundStrokeStyle(emptyLine)
       .setSeriesBackgroundFillStyle(emptyFill)
       .setSeriesBackgroundStrokeStyle(emptyLine)
-      .setMouseInteractions(false);
+      .setMouseInteractions(false)
+      .setBackgroundStrokeStyle(
+        new SolidLine({
+          thickness: 2,
+          fillStyle: new SolidFill({ color: ColorRGBA(0, 0, 0) }),
+        })
+      );
 
     const axisX = chart
       .getDefaultAxisX()
