@@ -1,10 +1,13 @@
 import {
-  ChangeDetectionStrategy,
-  Component,
+  AfterViewInit,
+  ChangeDetectionStrategy, Component,
   ElementRef,
+  Input,
   OnInit,
-  ViewChild,
+  ViewChild
 } from "@angular/core";
+import { Observable } from "rxjs";
+import { IChartProperties } from "../interfaces/chart-properties.interface";
 
 @Component({
   selector: "app-chart-grid",
@@ -12,22 +15,32 @@ import {
   styleUrls: ["./chart-grid.component.scss"],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ChartGridComponent implements OnInit {
+export class ChartGridComponent implements OnInit, AfterViewInit {
   @ViewChild("canvas", { static: true })
   canvas?: ElementRef<HTMLCanvasElement>;
+  @Input() chartProps: Observable<IChartProperties> =
+    new Observable<IChartProperties>();
   context: CanvasRenderingContext2D | null | undefined;
 
   constructor() {}
 
   ngOnInit(): void {
     this.context = this.canvas?.nativeElement.getContext("2d");
+  }
 
+  ngAfterViewInit() {
+    this.chartProps.subscribe((res: IChartProperties) => {
+      this.setChartProperties(res);
+      this.drawBoard();
+    });
+  }
+
+  setChartProperties(res: IChartProperties) {
     if (this.context) {
-      this.context.canvas.width = 1900;
-      this.context.canvas.height = 300;
-      this.context.lineWidth = .4;
+      this.context.canvas.width = res.width - 20;
+      this.context.canvas.height = res.height - 25;
+      this.context.lineWidth = 0.4;
     }
-    this.drawBoard();
   }
 
   drawBoard() {

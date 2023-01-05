@@ -20,7 +20,8 @@ import {
   SolidLine,
   translatePoint,
 } from "@arction/lcjs";
-import { Observable, Subscription } from "rxjs";
+import { Observable, Subject, Subscription } from "rxjs";
+import { IChartProperties } from "../interfaces/chart-properties.interface";
 
 const X_VIEW_MS = 4 * 1000;
 const info = {
@@ -46,6 +47,7 @@ export class ChartComponent implements OnDestroy, AfterViewInit, OnInit {
   forwardBufferedIncomingPointsHandle: number | undefined;
   @Input() points: Observable<Point[]> = new Observable<Point[]>();
   chartConfig: any;
+  $chartProp: Subject<IChartProperties> = new Subject<IChartProperties>();
 
   constructor() {}
 
@@ -94,7 +96,13 @@ export class ChartComponent implements OnDestroy, AfterViewInit, OnInit {
       topRightEngine.x,
       topRightEngine.y
     );
-    console.log({ bottomLeftClient, topRightClient });
+    this.setWidthAndHeight(bottomLeftClient, topRightClient);
+  }
+
+  setWidthAndHeight(bottomLeftClient: any, topRightClient: any) {
+    const width = topRightClient.x - bottomLeftClient.x;
+    const height = bottomLeftClient.y - topRightClient.y;
+    this.$chartProp.next({ width, height });
   }
 
   createChartConfig() {
@@ -109,17 +117,11 @@ export class ChartComponent implements OnDestroy, AfterViewInit, OnInit {
       .setBackgroundStrokeStyle(emptyLine)
       .setSeriesBackgroundFillStyle(emptyFill)
       .setSeriesBackgroundStrokeStyle(emptyLine)
-      .setMouseInteractions(false)
-      .setBackgroundStrokeStyle(
-        new SolidLine({
-          thickness: 2,
-          fillStyle: new SolidFill({ color: ColorRGBA(0, 0, 0) }),
-        })
-      );
+      .setMouseInteractions(false);
 
     const axisX = chart
       .getDefaultAxisX()
-      .setTickStrategy(AxisTickStrategies.Empty)
+      .setTickStrategy(AxisTickStrategies.Numeric)
       .setStrokeStyle(emptyLine)
       .setScrollStrategy(undefined)
       .setInterval(0, X_VIEW_MS);
